@@ -1,0 +1,7 @@
+--- 
+- :cmd: sudo /sbin/pfctl -s info
+  :pairs: 
+  - <%= hostname %>.pf.states: !ruby/regexp / \s+ current \s entries \s+ (\d+) \s/ix
+- :cmd: sudo /sbin/pfctl -s memory
+  :pairs: 
+  - <%= hostname %>.pf.maxstates: !ruby/regexp / ^states \s+ hard \s limit \s+ (\d+) /ix
