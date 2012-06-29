@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby
 # 
 
-defaults = { :port => 2003, :graphite => 'graphite.dc1.puppetlabs.net', :source => nil , :file => 'graphiteme.yaml' }
-
 # Code below, stay away...
 require 'rubygems'
 require 'simple-graphite'
@@ -93,28 +91,21 @@ end
 
 
 
-opts = Trollop::options do
-  opt :source, "Source IP address", :short => 's', :type => :string
-  opt :graphite, "IP/hostname for graphite", :short => 'g', :type => :string
-  opt :port, "Port for graphite", :short => 'p', :type => :integer
-  opt :daemon, "Run in a loop, every N seconds", :short => 'd', :type => :integer
-end
-opts.each { |k,v| opts.delete k if v.nil? }
-opts = defaults.merge( opts )
-
-
-make_me_stats_on_these = read_config( opts[:file] )
+# Read the YAML config, which contains what we're talking to, and the
+# details on the metrics to collect.
+opts = read_config( 'graphiteme.yaml' )
 
 g = Graphite.new
 g.host = opts[:graphite]
 g.port = opts[:port]
 g.source = opts[:source]
 
+make_me_stats_on_these = opts[:things]
 
-if opts[:daemon_given]
+if opts[:daemon] and not opts[:daemon].nil?
   while 1
     make_my_stats( g , make_me_stats_on_these )
-    sleep opts[:daemon]
+    sleep opts[:daemon].to_i
   end
 else
   make_my_stats( g , make_me_stats_on_these )
