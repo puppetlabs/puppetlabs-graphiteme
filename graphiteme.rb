@@ -103,11 +103,11 @@ def daemonopts()
   }
 end
 
-def runthewholething( configfile = 'graphiteme.yaml' )
+def runthewholething( configfile )
 
   # Read the YAML config, which contains what we're talking to, and the
   # details on the metrics to collect.
-  opts = read_config( 'graphiteme.yaml' )
+  opts = read_config( configfile )
 
   g = Graphite.new
   g.host = opts[:graphite]
@@ -135,6 +135,12 @@ end
 
 # http://stackoverflow.com/questions/2249310/if-name-main-equivalent-in-ruby
 if __FILE__ == $0
-  runthewholething
+
+  opts = Trollop::options do
+    opt :config, "Config file location.", :short => 'f', :type => :string, :default => 'graphiteme.yaml'
+  end
+  Trollop::die :config, "must exist" unless File.exist?(opts[:config]) if opts[:config]
+
+  runthewholething opts[:config]
 end
 
