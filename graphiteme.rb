@@ -8,6 +8,7 @@ require 'trollop'
 require 'yaml'
 require 'socket'
 require 'erb'
+require 'daemons'
 
 
 class Graphite
@@ -26,6 +27,7 @@ class Graphite
     yield socket
     socket.close
   end
+
 end
 
 class TCPSocket
@@ -89,25 +91,50 @@ def read_config( file )
   make_me_stats_on_these
 end
 
+# Ever so slightly hardcoded for paths.
+def daemonopts()
+  {
+    :ontop      => false,
+    :backtrace  => false,
+    :dir_mode   => :normal,
+    :dir        => '/var/run/graphiteme/',
+    :log_output => true,
+    :log_dir    => '/var/log/graphiteme/',
+  }
+end
 
+def runthewholething( configfile = 'graphiteme.yaml' )
 
-# Read the YAML config, which contains what we're talking to, and the
-# details on the metrics to collect.
-opts = read_config( 'graphiteme.yaml' )
+  # Read the YAML config, which contains what we're talking to, and the
+  # details on the metrics to collect.
+  opts = read_config( 'graphiteme.yaml' )
 
-g = Graphite.new
-g.host = opts[:graphite]
-g.port = opts[:port]
-g.source = opts[:source]
+  g = Graphite.new
+  g.host = opts[:graphite]
+  g.port = opts[:port]
+  g.source = opts[:source]
 
-make_me_stats_on_these = opts[:things]
+  make_me_stats_on_these = opts[:things]
 
-if opts[:daemon] and not opts[:daemon].nil?
-  while 1
+  if opts[:daemon] and not opts[:daemon].nil?
+
+    # See http://daemons.rubyforge.org/classes/Daemons.html#M000007
+    # for how daemons works.
+    Daemons.daemonize( daemonopts() )
+
+    while 1
+      make_my_stats( g , make_me_stats_on_these )
+      sleep opts[:daemon].to_i
+    end
+  else
     make_my_stats( g , make_me_stats_on_these )
-    sleep opts[:daemon].to_i
   end
-else
-  make_my_stats( g , make_me_stats_on_these )
+
+end
+
+
+# http://stackoverflow.com/questions/2249310/if-name-main-equivalent-in-ruby
+if __FILE__ == $0
+  runthewholething
 end
 
