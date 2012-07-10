@@ -97,6 +97,7 @@ def daemonopts()
     :ontop      => false,
     :backtrace  => false,
     :dir_mode   => :normal,
+    :app_name   => 'graphiteme',
     :dir        => '/var/run/graphiteme/',
     :log_output => true,
     :log_dir    => '/var/log/graphiteme/',
@@ -118,9 +119,14 @@ def runthewholething( configfile )
 
   if opts[:daemon] and not opts[:daemon].nil?
 
+    # If we have specified a log or pid dir, use that before we fork
+    doptions = daemonopts()
+    doptions.merge!( { :dir     => opts[ :pid_dir ],
+                       :log_dir => opts[ :log_dir ] } )
+
     # See http://daemons.rubyforge.org/classes/Daemons.html#M000007
     # for how daemons works.
-    Daemons.daemonize( daemonopts() )
+    Daemons.daemonize( doptions )
 
     while 1
       make_my_stats( g , make_me_stats_on_these )
