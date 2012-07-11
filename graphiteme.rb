@@ -54,18 +54,52 @@ end
 
 def make_my_stats( graphiteobject , things )
 
+  things.each do |thing|
+
+    # Takes an object, the command, and an array of tuples (hashes) for
+    # the metric/regex pairs.
+    graphitemagicer( graphiteobject , thing[:cmd] , thing[:pairs] )
+
+  end
+end
+
+# The idea here is we just run the command once, for a number of metrics.
+# That way, if you sudo it, it's just one incantation. And the time won't
+# be spread over multiple runs. It's just neater. Okay.
+def graphitemagicer( g , cmd , metricsandregexps )
+
   # Little inefficient doing this each time, but it needs to be available
   # to the ERB here.
   hostname = Socket.gethostname.split( '.' ).first
 
-  things.each do |thing|
-    thing[:pairs].each do |pair|
-      pair.each do |metric,regex|
-        graphitemagic( graphiteobject , thing[:cmd] , regex , ERB.new( metric ).result(binding) )
+  raise ArgumentError, 'metricsandregexps is not an Array' unless metricsandregexps.is_a? Array
+
+  metricsandregexps.each do |mar|
+
+    raise TypeError, 'metrics and regexps is not made of hashes' unless mar.is_a? Hash
+
+    IO.popen( "#{cmd} 2>/dev/null </dev/null" , 'r' ) do |c|
+      c.each do |line|
+
+        mar.each do |metric,regex|
+
+          unless regex.class == Regexp
+            regex = Regexp.new regex
+          end
+
+          if line =~ regex
+            metric = ERB.new( metric ).result(binding)
+            g.push_to_graphite { |gg| gg.pee( metric , $1 ) }
+            # puts "Metric of #{metric} with value of #{$1}"
+          end
+
+        end
       end
     end
   end
+
 end
+
 
 def read_config( file )
 
