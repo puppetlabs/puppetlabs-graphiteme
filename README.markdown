@@ -18,10 +18,11 @@ output, throws metrics around.
 :things: 
 - :pairs: 
   - <%= hostname %>.pf.states: !ruby/regexp / \s+ current \s entries \s+ (\d+) \s/ix
-  :cmd: sudo /sbin/pfctl -s info
+  - <%= hostname %>.pf.memory: !ruby/regexp / \s+ memory \s+ (\d+) \s/ix
+  :cmd: /usr/local/bin/sudo /sbin/pfctl -s info
 - :pairs: 
   - <%= hostname %>.pf.maxstates: !ruby/regexp / ^states \s+ hard \s limit \s+ (\d+) /ix
-  :cmd: sudo /sbin/pfctl -s memory
+  :cmd: /usr/local/bin/sudo /sbin/pfctl -s memory
 </pre>
 
 * graphite - hostname of your graphite/carbon server.
@@ -33,9 +34,9 @@ output, throws metrics around.
 This is where it gets... messy. 
 
 * things - array of things to do things with.
-** pairs: hash of the following...
-*** arrays of a hash (I wanted a tuple) metric name (with ERB for hostname) and regexp to look for.
-*** cmd: command to run, of which the output you want parsed.
+* pairs: hash of the following...
+* arrays of a hash (I wanted a tuple) metric name (with ERB for hostname) and regexp to look for.
+* cmd: command to run, of which the output you want parsed.
 
 "Neat" huh?
 
